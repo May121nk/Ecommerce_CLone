@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        table, tr, td {
+  border: 1px solid;
+  text-align: center;
+  
+}
+table{
+    width: 60%;
+    position: relative;
+    left: 30%;
+    margin: 20px;
+}
+#img{
+    width: 100px;
+    height: 100px;
+}
+    </style>
+</head>
+<body>
+    <%- include('panel.ejs') %>
+    <table>
+        <tr>
+            <td>Title</td>
+            <td>Category Name</td>
+            <td>Price</td>
+            <td>Images</td>
+        </tr>
+        <% getdata.forEach((data)=>{ %>
+         
+             <tr>
+             <td><h4 class="product-name"><%= data.title %></h4></td>
+             <td><h4 class="product-name"><%= data.categoryname %></h4></td>
+             <td><h4 class="product-price"><%= data.price %></h4></td>
+             <td><img src="<%= data.image_insert %>" alt="" id="img"></td>
+             <td><form action="/delete/<%= data._id %>" method="post">
+                <input type="hidden" name="id" value="<%= data._id%>">
+                <button value="delete">delete</button>
+              </form></td>
+              <td> <form action="/updatedata/<%= data._id %>" method="post">
+                <input type="hidden" name="id" value="<% data._id%>">
+                <button value="update">update</button>
+              </form></td>
+            </tr>
+            
+          <% }) %> 
+        </table>
+</body>
+</html>

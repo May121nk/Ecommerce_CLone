@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart</title>
+   <style>
+    body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.cart-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+   
+}
+
+.product-container {
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.product-container h2{
+    font-size: 15px;
+}
+
+.product-container img {
+    width: 100px;
+    height: auto;
+    margin-right: 20px;
+}
+
+.product-name {
+    font-size: 10px;
+    margin-bottom: 5px;
+}
+
+.product-price {
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.product-quantity {
+    font-size: 16px;
+    margin-bottom: 20px;
+}
+#cart-inside{
+    display: flex ;
+    align-items: center;
+    justify-content: space-between;
+}
+.cart-summary {
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+}
+
+.cart-summary p {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+#quantitydiv{
+    display: flex;
+}
+
+.checkout-btn {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    font-size: 18px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.checkout-btn:hover {
+    background-color: #0056b3; /* darker blue color on hover */
+}
+
+   </style>
+</head>
+<body>
+    <%- include('navbar.ejs') %>
+    <div class="cart-container">
+        <h1>Shopping Cart</h1>
+        <div id="cart-inside">
+        <% if (cardpage && cardpage.items.length > 0){ %>
+            <% let totalproductprice = 0%>
+            <% let totalquantity=0 %>
+            <% let totalprice=0 %>
+
+           <% cardpage.items.forEach(product =>{ %>
+
+            <% totalproductprice = product.quantity * product.productid.price %>
+        <div class="product-container">
+            <img src="<%= product.productid.image_insert %>" alt="Product Image">
+
+            <h2 class="product-name"><%= product.productid.title%></h2>
+            <p class="product-price">$ <%= totalproductprice %></p>
+           <div id="quantitydiv">
+            
+            <p class="product-quantity">Quantity:<%= product.quantity %></p>
+            <form action="/increasequantity/<%= product._id %>" method="post">
+                <button style="width: 20px;border: none;font-weight: 500;">+</button>
+              </form>
+            <form action="/decreasequantity/<%= product._id %>" method="post">
+                <button style="width: 20px;border: none;font-weight: 500;">-</button>
+              </form>
+            </div>
+        </div>
+        <% totalquantity = totalquantity + product.quantity %>
+        <% totalprice = totalprice + totalproductprice %>
+        <% }) %>
+    </div>
+        <div class="cart-summary">
+            <p>Total Items: <span id="total-items"> <%= totalquantity %></span></p>
+            <p>Total Price: <span id="total-price">$<%= totalprice %></span></p>
+        </div>
+
+        <form id="paymentForm" action="/create-order" method="post">
+            <input type="hidden" name="totalprice" id="totalAmount" value="<%= totalprice %>">
+            <button type="submit" class="checkout-btn">Pay Now</button>
+        </form>
+
+        <%} else {%>
+              <h1>Cart is Empty</h1>
+        <%}%>
+    </div>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        document.getElementById('paymentForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const totalprice = document.getElementById('totalAmount').value;
+            try {
+                const response = await fetch('/create-order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ totalprice })
+                });
+                const order = await response.json();
+                const options = {
+                    key: 'rzp_test_ckfG9WZwdZRwVP',
+                    amount: totalprice*100,
+                    currency: 'INR',
+                    name: 'D company',
+                    description: 'Purchase Description',
+                    order_id: order.id,
+                    handler: function (response) {
+                        alert('Payment successful. Payment ID: ' + response.razorpay_payment_id);
+                    },
+                    prefill: {
+                        name: order.username,  // assuming you have user's name
+                        email: 'deepdadore@gmail.com',  // assuming you have user's email
+                        contact: '7223077806'  // assuming you have user's phone
+                    },
+                    theme: {
+                        color: '#3399cc'
+                    }
+                };
+                const rzp = new Razorpay(options);
+                rzp.open();
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+    </script>
+     <%- include('footer.ejs') %>
+</body>
+</html>

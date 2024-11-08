@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body{
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <%- include('panel.ejs') %>
+    <div id="category">
+    <form action="/categorydata" method="post">
+    <fieldset>
+        <legend>Add Category</legend>
+            <div>
+                <input type="text" name="categoryname" placeholder="Enter category" required>
+            </div><br>
+            <div>
+                <button name="submit">Submit</button>
+            </div>
+        
+    </fieldset>
+</div>
+</form>
+</body>
+</html>

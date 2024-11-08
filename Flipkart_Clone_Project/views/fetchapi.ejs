@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div id="fetch">
+
+    </div>
+</body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    $(document).ready(function(){
+        $.ajax({
+            url:"/api/products",
+            method:"get",
+            success:function(products){
+                let fetchapi=$("#fetch")
+                products.forEach(element => {
+                    fetchapi.append(`<div>
+                        <h1>${element.title}</h1>
+                        <h2>${element.price}</h2>
+                        <img src=${element.image_insert} style="width:100px;height:100px">
+                        </div>`)
+                });
+            }
+        })
+    })
+</script>
+</html>

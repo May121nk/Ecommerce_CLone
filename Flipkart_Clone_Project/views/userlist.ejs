@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        table, tr, td {
+  border: 1px solid;
+  text-align: center;
+  
+}
+table{
+    width: 60%;
+    position: relative;
+    left: 30%;
+    margin: 20px;
+}
+    </style>
+</head>
+<body>
+    <%- include('panel.ejs') %>
+    <table>
+        <tr>
+            <td>Username</td>
+            <td>Email</td>
+            <td>Phone</td>
+        </tr>
+        <% getuser.forEach((data)=>{ %>
+         
+             <tr>
+             <td><h4 class="product-name"><%= data.username %></h4></td>
+             <td><h4 class="product-price"><%= data.email %></h4></td>
+             <td><h4 class="product-price"><%= data.phone %></h4></td>
+            </tr>
+            
+          <% }) %> 
+        </table>
+</body>
+</html>

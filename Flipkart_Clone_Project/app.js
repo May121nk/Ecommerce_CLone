@@ -15,8 +15,14 @@ flipcart.set('views', __dirname + '/views')
 flipcart.set('view engine', 'ejs')
 
 flipcart.use(bodyParser.urlencoded({extended:true}))
+// flipcart.use('/userregistration', registrationRoute);
 
-mongoose.connect('mongodb://localhost:27017/flipcart')
+mongoose.connect('mongodb://localhost:27017/flipcart').then(()=>{
+    console.log("connected to mongodb")
+}).catch((err)=>{
+    console.log("error connecting mongodb");
+    
+})
 
 const categorySchema = new mongoose.Schema({
     categoryname:String
@@ -35,6 +41,17 @@ const FormSchema = new mongoose.Schema({
 
 const Formschema = mongoose.model('Formschema', FormSchema)
 
+// Define User schema and model
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true },
+    password: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
+  });
+  
+  const User = mongoose.model('User', userSchema); // This defines the `User` model
+
+
 const cartSchema = new mongoose.Schema({
     userid:String,
     items:[{
@@ -46,48 +63,53 @@ const cartSchema = new mongoose.Schema({
  const cartdata = mongoose.model('cartdata', cartSchema)
  
  const RegistrationSchema = new mongoose.Schema({
-    username:String,
-    password:String,
-    email:String,
-    phone:Number,
+    username: { type: String, required: true },
+    password: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true }
+     
+    })
     
-})
-
-const Registrationschema = mongoose.model('Registrationschema', RegistrationSchema)
-
-const storage = multer.diskStorage({
-    destination: 'public/pimage/',
-    filename: (req,file,temp)=>{
-        temp(null, file.originalname)
+    const Registrationschema = mongoose.model('Registrationschema', RegistrationSchema)
+    
+    const storage = multer.diskStorage({
+        destination: 'public/pimage/',
+        filename: (req,file,temp)=>{
+            temp(null, file.originalname)
+        }
+    })
+    
+    const upload = multer({storage:storage})
+    
+    flipcart.use(session({secret:'your-own-key',resave:true,saveUninitialized:true}))
+    
+    const auth = (req,res,next)=>{
+        if(req.session && req.session.user && req.session.password){
+            return next()
+        }
+        else{
+            
+            res.redirect('/loginpage');
+            return;
+        }
     }
-})
-
-const upload = multer({storage:storage})
-
-flipcart.use(session({secret:'your-own-key',resave:true,saveUninitialized:true}))
-
- const auth = (req,res,next)=>{
-    if(req.session && req.session.user && req.session.password){
-        return next()
-    }
-    else{
-        
-        res.redirect('/loginpage')
-        
-    }
- }
-
- const userauth = (req,res,next)=>{
-    if(req.session && req.session.user){
-        return next()
+    
+    const userauth = (req,res,next)=>{
+        if(req.session && req.session.user){
+            return next()
     }
     else{
         
         res.redirect('/userlogin')
-        
+        return;
     }
- }
+}
 
+flipcart.get('/',async (req,res)=>{
+    const gethome = await Formschema.find()
+    res.render('home',{gethome})
+
+})
 
 flipcart.get('/admin_insert', async (req,res)=>{
     const fdata=await categorymodel.find()    
@@ -144,11 +166,6 @@ flipcart.post('/submit/:id', upload.single('image_insert') , async (req,res)=>{
     res.redirect('/display')
 })
 
-flipcart.get('/home',async (req,res)=>{
-    const gethome = await Formschema.find()
-    res.render('home',{gethome})
-
-})
 
 flipcart.get('/navbar',async (req,res)=>{
     res.render('navbar')
@@ -157,42 +174,44 @@ flipcart.get('/footer',async (req,res)=>{
     res.render('footer')
 })
 
-flipcart.get('/panel', auth, async(req,res)=>{
-    username=req.session.user
-    password=req.session.password
-    if(username=="admin"){
-      
-       if(password=="admin123"){
-        res.render('panel')
-       }
-       else{
-        console.log("password wrong")
-       }
-    }
-    else{
-        console.log("username is wrong")
-        res.redirect('/loginpage')
-    }
-})
+flipcart.get('/panel', auth, async (req, res) => {
+    // Check if the session is initialized
+    const { user: username, password } = req.session;
 
+    // Validate the username and password
+    if (username === "admin") {
+        if (password === "admin123") {
+            // Render the panel if credentials are correct
+            res.render('panel');
+        } else {
+            // Log error if the password is incorrect
+            console.log("Password is incorrect");
+            res.redirect('/loginpage'); // Redirect to login page
+        }
+    } else {
+        // Log error if the username is incorrect or missing
+        console.log("Username is incorrect or not logged in");
+        res.redirect('/loginpage'); // Redirect to login page
+    }
+});
 
 
 flipcart.get('/loginpage',async (req,res)=>{
     
     res.render('login')
 })
-flipcart.post('/login',async (req,res)=>{
-    const{username,password}= req.body
-    if(username=="admin" && password=="admin123"){
-        req.session.user=username
-        req.session.password=password
-        res.redirect('/panel')
+flipcart.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    if (username === "admin" && password === "admin123") {
+        req.session.user = username;
+        req.session.password = password;
+        console.log('Session Data:', req.session); // Debugging
+        res.redirect('/panel');
+    } else {
+        res.redirect('/loginpage');
     }
-    else{
-        
-        res.redirect('/loginpage')
-    }
-})
+});
+
 
 flipcart.post('/add-cart/:id',userauth, async (req, res) =>{
     const productid = req.params.id
@@ -250,20 +269,43 @@ flipcart.get('/registration',async(req,res)=>{
     res.render('user/registration')
 })
 
-flipcart.post('/userregistration',async(req,res)=>{
-  const{username,password,email,phone}=req.body
-  const exist = await Registrationschema.findOne({$or:[{username},{email},{phone}]})
-  if(exist){
-   res.send("Already exist")
-  }
-  else{
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new Registrationschema({ username, password: hashedPassword, email, phone });
-        
-    await newUser.save()
-  }
-  res.redirect('userlogin')
-})
+flipcart.post('/userregistration', async (req, res) => {
+    const { username, password, email, phone } = req.body;
+
+    // Validate fields
+    if (!username || !password || !email || !phone) {
+        return res.status(400).send('All fields are required');
+    }
+
+    try {
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Save user to database
+        const newUser = new Registrationschema({
+            username,
+            password: hashedPassword, // Save hashed password
+            email,
+            phone,
+        });
+
+        await newUser.save();
+
+        // Automatically log the user in
+        req.session.user = newUser._id; // Store user ID in session
+        res.redirect('/cart'); // Redirect to cart or user panel
+    } catch (err) {
+        console.error(err);
+
+        // Handle duplicate email error
+        if (err.code === 11000) {
+            res.status(400).send('Email already exists');
+        } else {
+            res.status(500).send('Error registering user');
+        }
+    }
+});
+
 
 flipcart.get('/userlist',async(req,res)=>{
     const getuser = await Registrationschema.find()
@@ -273,26 +315,33 @@ flipcart.get('/userlist',async(req,res)=>{
 flipcart.get('/userlogin',async(req,res)=>{
     res.render('user/login')
 })
-flipcart.post('/user/login',async(req,res)=>{
-   const {username,password} = req.body
-   const userLogin = await Registrationschema.findOne({username})
 
-   if(!userLogin){
-    res.redirect("/registration")
-   }
-   else {
-    if(password == userLogin.password){
-    req.session.user = userLogin._id
-    res.redirect("/cart")
+flipcart.post('/user/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        // Find the user by username
+        const userLogin = await Registrationschema.findOne({ username });
+
+        if (!userLogin) {
+            res.send("User not found. Please register.");
+            return; // Stop further execution
+        }
+
+        // Compare the provided password with the hashed password
+        const isPasswordValid = await bcrypt.compare(password, userLogin.password);
+        if (isPasswordValid) {
+            req.session.user = userLogin._id; // Store user ID in session
+            res.redirect("/cart"); // Redirect to cart or user panel
+        } else {
+            res.send("Wrong credentials");
+        }
+    } catch (err) {
+        console.error("Error during login:", err);
+        res.status(500).send("Internal Server Error");
     }
-    else{
-        res.send("wrong crediential")
-       }
-   }
+});
 
-
-   
-})
 
 flipcart.get('/userpanel',userauth,async (req,res)=>{
     
@@ -401,6 +450,12 @@ flipcart.get('/fetchapi',async(req,res)=>{
     res.render("fetchapi")
  })
 
+// flipcart.listen(3000,()=>{
+//     console.log("server created")
+// })    
+
+
 flipcart.listen(3000,()=>{
-    console.log("server created")
-})    
+    console.log("server is running on port 3000");
+    
+})

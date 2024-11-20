@@ -1,4 +1,9 @@
-NOTE - By default route is /home 
+adminpanel username = admin password = admin123 for admin login
+go to *** /panel  ***
+ 
+ cd filename to enter inside the folder 
+ then 
+Running Script - npx nodemon app.js
 
-adminpanel username = admin password = admin123 
-fulipkart dynamic website with proper admin panel with authentication
+
+flipkart dynamic website with proper admin panel with authentication
